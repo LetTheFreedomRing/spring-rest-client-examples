@@ -26,17 +26,25 @@ public class UserController {
 
     @PostMapping("/users")
     public String formPost(Model model, ServerWebExchange serverWebExchange) {
-        MultiValueMap<String, String> map = serverWebExchange.getFormData().block();
 
-        Integer limit = Integer.valueOf(map.get("limit").get(0));
+        model.addAttribute("users", apiService.getUsers(
+                serverWebExchange.getFormData()
+                        .map(data -> {
+                            String limitInput = data.getFirst("limit");
+                            log.debug("Received Limit value: " + limitInput);
+                            Integer limit;
+                            try {
+                                limit = Integer.valueOf(limitInput);
+                            } catch (NumberFormatException e) {
+                                limit = 0;
+                            }
 
-        log.debug("Received limit : " + limit);
-
-        if (limit == null || limit == 0) {
-            limit = 1;
-        }
-
-        model.addAttribute("users", apiService.getUsers(limit));
+                            //default if zero
+                            if (limit == 0) {
+                                limit = 1;
+                            }
+                            return limit;
+                        })));
 
         return "userlist";
     }
